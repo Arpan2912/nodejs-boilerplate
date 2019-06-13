@@ -1,0 +1,27 @@
+{
+  "name": "saarthi-backend",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.471.0",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^8.0.0",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.1",
+    "mysql2": "^1.6.5",
+    "nodemailer": "^6.2.1",
+    "npx": "^10.2.0",
+    "pg": "^7.11.0",
+    "sequelize": "^5.8.7",
+    "sequelize-cli": "^5.4.0",
+    "socket.io": "^2.2.0",
+    "winston": "^3.2.1",
+    "winston-daily-rotate-file": "^3.9.0"
+  }
+}
