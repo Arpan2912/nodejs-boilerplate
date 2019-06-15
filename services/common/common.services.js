@@ -1,7 +1,16 @@
-const db = require('../../db');
+const csv = require('csvtojson');
+const multer = require('multer');
+const crypto = require("crypto");
 const Sequelize = require('sequelize');
 const nodemailer = require('nodemailer');
+
+const db = require('../../db');
 const AppLogger = require('../../config/app.logger');
+
+//multer configuration
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+const fileUploadMiddleware = upload.single('csv');
 
 function prepareSuccessResponse(message, data) {
   let obj = {
@@ -137,6 +146,33 @@ function extractExtension(image) {
   }
 }
 
+function readFileAndReturnCsvArray(req) {
+  console.log(req.file);
+  let csvData = req.file.buffer.toString('utf8');
+  return csv().fromString(csvData);
+}
+
+async function sha512(password, salt) {
+  let hash = crypto.createHmac('sha512', salt); /** Hashing algorithm sha512 */
+  hash.update(password);
+  let value = hash.digest('hex');
+  return await {
+    salt: salt,
+    passwordHash: value
+  };
+};
+
+async function generateSalt() {
+  var salt = await genRandomString(32); /** Gives us salt of length 32 */
+  return salt;
+}
+
+async function genRandomString(length = 50) {
+  return await crypto.randomBytes(Math.ceil(length / 2))
+    .toString('hex') /** convert to hexadecimal format */
+    .slice(0, length);   /** return required number of characters */
+};
+
 module.exports = {
   "prepareSuccessResponse": prepareSuccessResponse,
   "prepareErrorResponse": prepareErrorResponse,
@@ -144,5 +180,9 @@ module.exports = {
   "sendEmail": sendEmail,
   "log": log,
   "uploadImageOnAmazonS3": uploadImageOnAmazonS3,
-  "extractExtension": extractExtension
+  "extractExtension": extractExtension,
+  "fileUploadMiddleware": fileUploadMiddleware,
+  "readFileAndReturnCsvArray": readFileAndReturnCsvArray,
+  "generateSalt": generateSalt,
+  "sha512": sha512
 }
