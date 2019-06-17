@@ -30,6 +30,17 @@ function prepareErrorResponse(message, data) {
   return obj;
 }
 
+function logErrorAndSendResponse(e, res, data) {
+  let msg = e.msg ? e.msg : 'Something went wrong';
+  let code = e.code ? e.code : 500;
+  console.error(e);
+  if (e instanceof Error) {
+    AppLogger.error(e);
+  }
+  let errorObj = prepareErrorResponse(msg, data);
+  return res.status(code).send(errorObj);
+}
+
 function sendEmail() {
   let transporter = nodemailer.createTransport({
     host: "smtp.ethereal.email",
@@ -153,7 +164,7 @@ function readFileAndReturnCsvArray(req) {
 }
 
 async function sha512(password, salt) {
-  let hash = crypto.createHmac('sha512', salt); /** Hashing algorithm sha512 */
+  let hash = crypto.createHmac('sha512', salt);
   hash.update(password);
   let value = hash.digest('hex');
   return await {
@@ -161,6 +172,10 @@ async function sha512(password, salt) {
     passwordHash: value
   };
 };
+
+function generateSha512Hash(password) {
+  return crypto.createHash('sha512');
+}
 
 async function generateSalt() {
   var salt = await genRandomString(32); /** Gives us salt of length 32 */
@@ -176,6 +191,7 @@ async function genRandomString(length = 50) {
 module.exports = {
   "prepareSuccessResponse": prepareSuccessResponse,
   "prepareErrorResponse": prepareErrorResponse,
+  "logErrorAndSendResponse": logErrorAndSendResponse,
   "executeSqlQuery": executeSqlQuery,
   "sendEmail": sendEmail,
   "log": log,
@@ -184,5 +200,7 @@ module.exports = {
   "fileUploadMiddleware": fileUploadMiddleware,
   "readFileAndReturnCsvArray": readFileAndReturnCsvArray,
   "generateSalt": generateSalt,
-  "sha512": sha512
+  "sha512": sha512,
+  "generateSha512Hash": generateSha512Hash,
+  "genRandomString": genRandomString
 }

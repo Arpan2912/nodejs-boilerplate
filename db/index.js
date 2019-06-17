@@ -37,4 +37,24 @@ npx sequelize-cli model:generate --name event_menu --attributes u_uuid:uuid,alia
 
 npx sequelize-cli model:generate --name agenda --attributes u_uuid:uuid,event_id:integer,user_id:integer,start_date_time:date,duration:string,venue:string,description:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
 
+npx sequelize-cli model:generate --name agenda_speaker --attributes u_uuid:uuid,agenda_id:integer,speaker_id:integer,user_id:integer,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name attendee --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,first_name:string,last_name:string,company:string,email:string,phone:string,website:string,description:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name contact_us --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,first_name:string,last_name:string,position:string,email:string,phone:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name info_booth --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,title:string,content:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name speaker --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,first_name:string,last_name:string,email:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name sponsor --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,first_name:string,last_name:string,email:string,website:string,phone:string,description:string,facebook:string,linkedin:string,twitter:string,google:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name feedback --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,question_type:string,question:string,options:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name exhibitor --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,first_name:string,last_name:string,stand_no:string,email:string,website:string,phone:string,description:string,facebook:string,linkedin:string,twitter:string,google:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name web_page --attributes u_uuid:uuid,user_id:integer,event_id:integer,menu_id:integer,url:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
+npx sequelize-cli model:generate --name user_token --attributes u_uuid:uuid,user_id:integer,token:string,type:string,is_active:boolean,is_deleted:boolean,created_at:date,updated_at:date
+
 */
