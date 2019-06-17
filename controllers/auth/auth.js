@@ -1,31 +1,35 @@
-const { prepareSuccessResponse, logErrorAndSendResponse } = require('../../services/common/common.services');
-const AppLogger = require('../../config/app.logger');
-const { signin, signup, verifyUser } = require('../../services/auth/auth.services');
+/* eslint-disable no-throw-literal */
+/* eslint-disable consistent-return */
+const {
+  prepareSuccessResponse,
+  logErrorAndSendResponse
+} = require("../../services/common/common.services");
+const {
+  signin,
+  signup,
+  verifyUser
+} = require("../../services/auth/auth.services");
 
 module.exports = class Auth {
-  
   static async signin(req, res) {
-    console.log("req body", req.body);
     try {
-      req.checkBody('email', 'Email should  not be empty').notEmpty();
-      req.checkBody('password', 'password should not be empty').isEmpty();
+      req.checkBody("email", "Email should  not be empty").notEmpty();
+      req.checkBody("password", "password should not be empty").isEmpty();
 
-      let errors = req.validationErrors();
+      const errors = req.validationErrors();
       if (errors) {
-        console.log(errors[0].msg);
-        let msg = errors[0].msg;
-        throw ({ code: 500, msg: msg });
+        const { msg } = errors[0];
+        throw { code: 500, msg };
       }
-      let obj = {
+      const obj = {
         email: req.body.email,
         password: req.body.password
-      }
+      };
 
-      let resObj = await signin(obj);
+      const resObj = await signin(obj);
 
-      let response = prepareSuccessResponse("login success", resObj);
+      const response = prepareSuccessResponse("login success", resObj);
       return res.status(200).send(response);
-
     } catch (e) {
       logErrorAndSendResponse(e, res, null);
     }
@@ -33,25 +37,26 @@ module.exports = class Auth {
 
   static async signup(req, res) {
     try {
-      req.checkBody('email', 'Email should  not be empty').notEmpty();
-      req.checkBody('firstName', 'First name should  not be empty').notEmpty();
-      req.checkBody('lastName', 'Last name should  not be empty').notEmpty();
-      req.checkBody('phone', 'Phone should  not be empty').notEmpty();
-      req.checkBody('password', 'Password should  not be empty').notEmpty();
+      req.checkBody("email", "Email should  not be empty").notEmpty();
+      req.checkBody("firstName", "First name should  not be empty").notEmpty();
+      req.checkBody("lastName", "Last name should  not be empty").notEmpty();
+      req.checkBody("phone", "Phone should  not be empty").notEmpty();
+      req.checkBody("password", "Password should  not be empty").notEmpty();
       // req.checkBody('password', 'password should not be empty').isEmpty();
 
-      let errors = req.validationErrors();
+      const errors = req.validationErrors();
       if (errors) {
-        console.log(errors[0].msg);
-        let msg = errors[0].msg;
-        throw ({ code: 500, msg: msg });
+        const { msg } = errors[0];
+        throw { code: 500, msg };
       }
 
-      let resObj = await signup(req.body);
+      const resObj = await signup(req.body);
 
-      let response = prepareSuccessResponse("Signup success, Please verify your email address", resObj);
+      const response = prepareSuccessResponse(
+        "Signup success, Please verify your email address",
+        resObj
+      );
       return res.status(200).send(response);
-
     } catch (e) {
       logErrorAndSendResponse(e, res, null);
     }
@@ -59,23 +64,22 @@ module.exports = class Auth {
 
   static async verifyUser(req, res) {
     try {
-      req.checkParams('token', 'Token should  not be empty').notEmpty();
+      req.checkParams("token", "Token should  not be empty").notEmpty();
 
-      let errors = req.validationErrors();
+      const errors = req.validationErrors();
       if (errors) {
-        console.log(errors[0].msg);
-        let msg = errors[0].msg;
-        throw ({ code: 500, msg: msg });
+        const { msg } = errors[0];
+        throw { code: 500, msg };
       }
-      let token = req.params.token;
-      let resObj = await verifyUser(token);
-
-      let response = prepareSuccessResponse("User verified successfully", null);
+      const { token } = req.params;
+      await verifyUser(token);
+      const response = prepareSuccessResponse(
+        "User verified successfully",
+        null
+      );
       return res.status(200).send(response);
-
     } catch (e) {
       logErrorAndSendResponse(e, res, null);
     }
   }
-
-}
+};

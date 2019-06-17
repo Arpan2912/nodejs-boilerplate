@@ -1,59 +1,60 @@
-const csv = require('csvtojson');
-const multer = require('multer');
+const csv = require("csvtojson");
+const multer = require("multer");
 const crypto = require("crypto");
-const Sequelize = require('sequelize');
-const nodemailer = require('nodemailer');
+const Sequelize = require("sequelize");
+const nodemailer = require("nodemailer");
+const aws = require("aws-sdk");
+const db = require("../../db");
+const AppLogger = require("../../config/app.logger");
 
-const db = require('../../db');
-const AppLogger = require('../../config/app.logger');
-
-//multer configuration
+// multer configuration
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-const fileUploadMiddleware = upload.single('csv');
+const upload = multer({ storage });
+const fileUploadMiddleware = upload.single("csv");
 
 function prepareSuccessResponse(message, data) {
-  let obj = {
+  const obj = {
     data,
     message,
     success: true
-  }
+  };
   return obj;
 }
 
 function prepareErrorResponse(message, data) {
-  let obj = {
+  const obj = {
     data,
     message,
     success: false
-  }
+  };
   return obj;
 }
 
 function logErrorAndSendResponse(e, res, data) {
-  let msg = e.msg ? e.msg : 'Something went wrong';
-  let code = e.code ? e.code : 500;
+  const msg = e.msg ? e.msg : "Something went wrong";
+  const code = e.code ? e.code : 500;
+  // eslint-disable-next-line no-console
   console.error(e);
   if (e instanceof Error) {
     AppLogger.error(e);
   }
-  let errorObj = prepareErrorResponse(msg, data);
+  const errorObj = prepareErrorResponse(msg, data);
   return res.status(code).send(errorObj);
 }
 
 function sendEmail() {
-  let transporter = nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
     host: "smtp.ethereal.email",
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: testAccount.user, // generated ethereal user
-      pass: testAccount.pass // generated ethereal password
+      user: "abc@gmail.com", // generated ethereal user
+      pass: "123452342" // generated ethereal password
     }
   });
 
   // send mail with defined transport object
-  let info = transporter.sendMail({
+  const info = transporter.sendMail({
     from: '"Fred Foo 👻" <foo@example.com>', // sender address
     to: "bar@example.com, baz@example.com", // list of receivers
     subject: "Hello ✔", // Subject line
@@ -61,6 +62,7 @@ function sendEmail() {
     html: "<b>Hello world?</b>" // html body
   });
 
+  // eslint-disable-next-line no-console
   console.log("Message sent: %s", info.messageId);
 }
 
@@ -79,7 +81,7 @@ function executeSqlQuery(query, replacements, operation) {
       queryType = Sequelize.QueryTypes.SELECT;
     }
     db.sequelize
-      .query(query, { replacements: replacements, type: queryType })
+      .query(query, { replacements, type: queryType })
       .then(data => {
         resolve(data);
       })
@@ -91,47 +93,53 @@ function executeSqlQuery(query, replacements, operation) {
 
 function log(obj, isError) {
   let msg = null;
-  let level = isError ? 'error' : 'info';
-  if (typeof obj === 'object') {
-    msg = JSON.stringify(obj)
-  } else if (typeof obj === 'string') {
+  const level = isError ? "error" : "info";
+  if (typeof obj === "object") {
+    msg = JSON.stringify(obj);
+  } else if (typeof obj === "string") {
     msg = obj;
   }
   AppLogger.log({
-    level: level,
+    level,
     message: msg
-  })
-};
+  });
+}
 
-function uploadImageOnAmazonS3(bucketName, fileName, bufferdata, contentType, userId, module) {
+function uploadImageOnAmazonS3(
+  bucketName,
+  fileName,
+  bufferdata,
+  contentType,
+  userId,
+  module
+) {
   return new Promise((resolve, reject) => {
-    let s3 = new aws.S3({
+    const s3 = new aws.S3({
       accessKeyId: process.env.ACCESS_KEY,
-      secretAccessKey: process.env.SECRET_KEY,
+      secretAccessKey: process.env.SECRET_KEY
       // region:'us-east-1',
     });
 
-    let params = {
-      ACL: 'public-read-write',
+    const params = {
+      ACL: "public-read-write",
       Body: bufferdata,
       // Bucket: 'd-fix-test',
       Bucket: process.env.BUCKET_NAME,
       Key: `${fileName}`,
       // ServerSideEncryption: null,
       Tagging: "usage=byDeveloper",
-      ContentEncoding: 'base64',
-      ContentType: contentType,
+      ContentEncoding: "base64",
+      ContentType: contentType
     };
 
     // let bucketFolder = `${bucketName}/${userId}`;
-    let bucketFolder = `${process.env.BUCKET_NAME}/${userId}`;
-    let executeUploadOnAmazonS3 = () => {
-      s3.upload(params, function (err, result) {
+    // const bucketFolder = `${process.env.BUCKET_NAME}/${userId}`;
+    const executeUploadOnAmazonS3 = () => {
+      s3.upload(params, function callback(err, result) {
         if (err) {
-          // throw new Error(err);
           reject(err);
         } else {
-          console.log('******** File upload on s3 completed ********', result);
+          console.log("******** File upload on s3 completed ********", result);
           resolve(result);
         }
       });
@@ -141,66 +149,67 @@ function uploadImageOnAmazonS3(bucketName, fileName, bufferdata, contentType, us
 }
 
 /**
-* extract extension from base64 string
-* @param {string} image 
-*/
+ * extract extension from base64 string
+ * @param {string} image
+ */
 function extractExtension(image) {
-  var imageString = image.slice(0, 70);
+  const imageString = image.slice(0, 70);
   if (imageString.match(/data:image\/png/)) {
     return "image/png";
-  } else if (imageString.match(/data:image\/jpeg/)) {
-    return "image/jpeg";
-  } else if (imageString.match(/data:image\/gif/)) {
-    return "image/gif";
-  } else {
+  }
+  if (imageString.match(/data:image\/jpeg/)) {
     return "image/jpeg";
   }
+  if (imageString.match(/data:image\/gif/)) {
+    return "image/gif";
+  }
+  return "image/jpeg";
 }
 
 function readFileAndReturnCsvArray(req) {
-  console.log(req.file);
-  let csvData = req.file.buffer.toString('utf8');
+  const csvData = req.file.buffer.toString("utf8");
   return csv().fromString(csvData);
 }
 
 async function sha512(password, salt) {
-  let hash = crypto.createHmac('sha512', salt);
+  const hash = crypto.createHmac("sha512", salt);
   hash.update(password);
-  let value = hash.digest('hex');
-  return await {
-    salt: salt,
+  const value = hash.digest("hex");
+  return {
+    salt,
     passwordHash: value
   };
-};
-
-function generateSha512Hash(password) {
-  return crypto.createHash('sha512');
 }
 
-async function generateSalt() {
-  var salt = await genRandomString(32); /** Gives us salt of length 32 */
-  return salt;
+function generateSha512Hash(password) {
+  return crypto.createHash("sha512");
 }
 
 async function genRandomString(length = 50) {
-  return await crypto.randomBytes(Math.ceil(length / 2))
-    .toString('hex') /** convert to hexadecimal format */
-    .slice(0, length);   /** return required number of characters */
-};
+  return crypto
+    .randomBytes(Math.ceil(length / 2))
+    .toString("hex") /** convert to hexadecimal format */
+    .slice(0, length); /** return required number of characters */
+}
+
+async function generateSalt() {
+  const salt = await genRandomString(32); /** Gives us salt of length 32 */
+  return salt;
+}
 
 module.exports = {
-  "prepareSuccessResponse": prepareSuccessResponse,
-  "prepareErrorResponse": prepareErrorResponse,
-  "logErrorAndSendResponse": logErrorAndSendResponse,
-  "executeSqlQuery": executeSqlQuery,
-  "sendEmail": sendEmail,
-  "log": log,
-  "uploadImageOnAmazonS3": uploadImageOnAmazonS3,
-  "extractExtension": extractExtension,
-  "fileUploadMiddleware": fileUploadMiddleware,
-  "readFileAndReturnCsvArray": readFileAndReturnCsvArray,
-  "generateSalt": generateSalt,
-  "sha512": sha512,
-  "generateSha512Hash": generateSha512Hash,
-  "genRandomString": genRandomString
-}
+  prepareSuccessResponse,
+  prepareErrorResponse,
+  logErrorAndSendResponse,
+  executeSqlQuery,
+  sendEmail,
+  log,
+  uploadImageOnAmazonS3,
+  extractExtension,
+  fileUploadMiddleware,
+  readFileAndReturnCsvArray,
+  generateSalt,
+  sha512,
+  generateSha512Hash,
+  genRandomString
+};

@@ -1,4 +1,7 @@
-const { readFileAndReturnCsvArray, prepareSuccessResponse } = require('../../services/common/common.services');
+const {
+  readFileAndReturnCsvArray,
+  prepareSuccessResponse
+} = require("../../services/common/common.services");
 
 module.exports = class UserController {
   static loadInitialApi(req, res) {
@@ -6,8 +9,12 @@ module.exports = class UserController {
   }
 
   static async fileUpload(req, res) {
-    let json = await readFileAndReturnCsvArray(req);
-    let resObj = prepareSuccessResponse("File upoaded successfully", json, true);
+    const json = await readFileAndReturnCsvArray(req);
+    const resObj = prepareSuccessResponse(
+      "File upoaded successfully",
+      json,
+      true
+    );
     return res.status(200).send(resObj);
   }
-}
+};

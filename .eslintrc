@@ -1,0 +1,20 @@
+{
+  "extends": [
+    "airbnb",
+    "prettier",
+    "prettier/react"
+  ],
+  "plugins": [
+    "prettier"
+  ],
+  "rules": {
+    "prettier/prettier": "error",
+    "max-len": [
+      "error",
+      80
+    ]
+  },
+  "settings": {
+    "import/resolver": {}
+  }
+}
