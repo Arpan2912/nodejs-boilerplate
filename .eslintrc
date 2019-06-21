@@ -12,7 +12,10 @@
     "max-len": [
       "error",
       80
-    ]
+    ],
+    "func-names": "off",
+    "consistent-return": "off",
+    "no-throw-literal": "off"
   },
   "settings": {
     "import/resolver": {}

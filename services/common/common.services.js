@@ -98,6 +98,9 @@ function log(obj, isError) {
     msg = JSON.stringify(obj);
   } else if (typeof obj === "string") {
     msg = obj;
+  } else if (obj instanceof Error) {
+    AppLogger.error(obj);
+    return;
   }
   AppLogger.log({
     level,
@@ -110,7 +113,9 @@ function uploadImageOnAmazonS3(
   fileName,
   bufferdata,
   contentType,
+  // eslint-disable-next-line no-unused-vars
   userId,
+  // eslint-disable-next-line no-unused-vars
   module
 ) {
   return new Promise((resolve, reject) => {
@@ -139,6 +144,7 @@ function uploadImageOnAmazonS3(
         if (err) {
           reject(err);
         } else {
+          // eslint-disable-next-line no-console
           console.log("******** File upload on s3 completed ********", result);
           resolve(result);
         }
@@ -182,7 +188,11 @@ async function sha512(password, salt) {
 }
 
 function generateSha512Hash(password) {
-  return crypto.createHash("sha512");
+  // password is added to remove unused error
+  return crypto
+    .createHash("sha512")
+    .update(password)
+    .digest("hex");
 }
 
 async function genRandomString(length = 50) {

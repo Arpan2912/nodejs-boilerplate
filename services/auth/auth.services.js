@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 /* eslint-disable prefer-destructuring */
 /* eslint-disable no-throw-literal */
 const jwt = require("jsonwebtoken");
@@ -9,7 +8,8 @@ const {
   executeSqlQuery,
   sha512,
   generateSalt,
-  genRandomString
+  genRandomString,
+  generateSha512Hash
 } = require("../common/common.services");
 const {
   qGetUserDetail,
@@ -17,12 +17,21 @@ const {
   qCreateUserToken,
   qGetTokenDetail,
   qUpdateUser,
-  qDeleteUserToken
+  qDeleteUserToken,
+  qGetUserDetailFromUuid,
+  qGetUserDetailFromId
 } = require("../../config/app.query");
 
 const privateKeyPath = `${__dirname}/../../.auth/auth.private.key`;
 
 const privateKey = fs.readFileSync(privateKeyPath);
+
+function generateJWTToken(obj) {
+  const signOptions = {
+    algorithm: "RS256"
+  };
+  return jwt.sign(obj, privateKey, signOptions);
+}
 
 async function signin(obj) {
   let user = null;
@@ -167,7 +176,8 @@ async function verifyUser(token) {
 
   const updateUserReplacement = {
     where_id: tokenDetail.id,
-    is_active: true
+    is_active: true,
+    updated_at: new Date().toISOString()
   };
 
   await executeSqlQuery(
@@ -183,15 +193,163 @@ async function verifyUser(token) {
   return Promise.resolve();
 }
 
-function generateJWTToken(obj) {
-  const signOptions = {
-    algorithm: "RS256"
+async function updatePassword(req) {
+  const { body, user } = req;
+  const { password } = body;
+  const { userId } = user;
+
+  const getUserDetailReplacement = {
+    u_uuid: userId
   };
-  return jwt.sign(obj, privateKey, signOptions);
+
+  let userDetail = await executeSqlQuery(
+    qGetUserDetailFromUuid,
+    getUserDetailReplacement,
+    "select"
+  );
+
+  if (userDetail.length === 0) {
+    throw { code: 409, msg: "User not found" };
+  }
+
+  userDetail = userDetail[0];
+  const { salt } = userDetail;
+  const { passwordHash } = await sha512(password, salt);
+  const replacement = {
+    password: passwordHash,
+    where_uuid: userDetail.u_uuid,
+    updated_at: new Date().toISOString()
+  };
+
+  const updateUserStatus = await executeSqlQuery(
+    qUpdateUser(replacement),
+    replacement,
+    "update"
+  );
+  console.log("updateUserStatus", updateUserStatus);
+  return Promise.resolve(null);
+}
+
+async function forgotPassword(req) {
+  const { email } = req.params;
+  const getUserDetailReplacement = {
+    email
+  };
+
+  let userDetail = await executeSqlQuery(
+    qGetUserDetail,
+    getUserDetailReplacement,
+    "select"
+  );
+
+  if (userDetail.length === 0) {
+    throw { code: 500, msg: "User not found" };
+  }
+
+  userDetail = userDetail[0];
+
+  const token = await genRandomString(25);
+  const userTokenReplacement = {
+    u_uuid: uuidv4(),
+    user_id: userDetail.id,
+    type: "forgot-password",
+    token,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  await executeSqlQuery(qCreateUserToken, userTokenReplacement, "insert");
+
+  // send forgot password mail
+  return Promise.resolve(null);
+}
+
+async function forgotPasswordValidate(req) {
+  const { token } = req.params;
+  const replacement = {
+    token,
+    type: "forgot-password"
+  };
+  let tokenDetail = await executeSqlQuery(
+    qGetTokenDetail,
+    replacement,
+    "select"
+  );
+
+  if (tokenDetail.length === 0) {
+    throw { code: 409, msg: "Token Expired" };
+  }
+
+  tokenDetail = tokenDetail[0];
+
+  if (tokenDetail.is_active === false) {
+    throw { code: 409, msg: "Token is not valid" };
+  }
+
+  const userDetailReplacement = {
+    id: tokenDetail.id
+  };
+  let userDetail = await executeSqlQuery(
+    qGetUserDetailFromId,
+    userDetailReplacement,
+    "select"
+  );
+
+  if (userDetail.length === 0) {
+    throw { code: 500, msg: "User not found" };
+  }
+
+  userDetail = userDetail[0];
+  const deleteTokenObj = {
+    token
+  };
+  await executeSqlQuery(qDeleteUserToken, deleteTokenObj, "delete");
+
+  return Promise.resolve({ userId: userDetail.u_uuid });
+}
+
+async function resetPassword(req) {
+  console.log("reset password body", req.body);
+  const { userId } = req.body;
+  let { password } = req.body;
+  password = await generateSha512Hash(password);
+  const replacement = {
+    u_uuid: userId
+  };
+
+  let userDetail = await executeSqlQuery(
+    qGetUserDetailFromUuid,
+    replacement,
+    "select"
+  );
+
+  if (userDetail.length === 0) {
+    throw { code: 409, msg: "User not found" };
+  }
+
+  userDetail = userDetail[0];
+  const { salt } = userDetail;
+  const { passwordHash } = await sha512(password, salt);
+  const updatePasswordObj = {
+    where_id: userDetail.id,
+    password: passwordHash,
+    updated_at: new Date().toISOString()
+  };
+  await executeSqlQuery(
+    qUpdateUser(updatePasswordObj),
+    updatePasswordObj,
+    "update"
+  );
+
+  return Promise.resolve();
 }
 
 module.exports = {
   signin,
   signup,
-  verifyUser
+  verifyUser,
+  updatePassword,
+  forgotPassword,
+  forgotPasswordValidate,
+  resetPassword
 };
